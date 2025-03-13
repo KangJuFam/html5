@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클릭 게임</title>
+    <style>
+        body {
+			background: linear-gradient(to bottom, #87CEEB, #1E90FF);
+			color: white;
+			font-family: 'Arial', sans-serif;
+			text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        #score {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        #clickButton {
+			font-size: 24px;
+			padding: 15px 40px;
+            border: none;
+			background-color: #ffcc00;
+			color: black;
+            cursor: pointer;
+			border-radius: 10px;
+			box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
+			transition: transform 0.1s, background-color 0.3s;
+        }
+		#clickButton:active {
+			transform: scale(0.9);
+			background-color: #ffaa00;
+		}
+        #clickButton:hover {
+            background-color: #0056b3;
+        }
+		#score, #highScoreDisplay, #timer {
+			font-size: 24px;
+			margin: 10px;
+		}
+		@keyframes scorePop {
+			0% {
+				transform: scale(1);
+			}
+			50% {
+				transform: scale(1.5);
+			}
+			100% {
+				transform: scale(1);
+			}
+		}
+		#timer {
+			font-size: 20px;
+			margin-bottom: 10px;
+			color: red;
+		}
+		@media (max-width: 768px) {
+			#clickButton {
+				font-size: 20px;
+				padding: 12px 30px;
+			}
+			#score, #timer, #highScoreDisplay {
+				font-size: 20px;
+			}
+		}
+		#clickButton:active {
+			transform: scale(0.85);
+			background-color: #ff8800;
+			transition: transform 0.1s ease, background-color 0.2s ease;
+		}
+		#specialItem {
+			font-size: 30px;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			cursor: pointer;
+			transition: transform 0.2s ease;
+		}
+
+		#specialItem:hover {
+			transform: scale(1.2);
+		}
+    </style>
+</head>
+<body>
+    <h1>클릭 게임</h1>
+	<div id="difficulty">
+		난이도 선택: 
+		<button onclick="setDifficulty('easy')">쉬움</button>
+		<button onclick="setDifficulty('normal')">보통</button>
+		<button onclick="setDifficulty('hard')">어려움</button>
+	</div><br>
+	<div id="mode">
+		모드 선택:
+		<button onclick="startGame(10)">10초 모드</button>
+		<button onclick="startGame(30)">30초 모드</button>
+		<button onclick="startGame(-1)">무제한 모드</button>
+	</div>
+	<div id="timer">남은 시간: -</div>
+    <div id="score">점수: 0</div>
+    <button id="clickButton">모드를 선택하세요.</button>
+	<div id="specialItem" onclick="collectItem()" style="display: none;">🎁</div>
+	<div id="scoreList"></div>
+	<button onclick="shareScore()">📢 점수 공유하기</button>
+	<audio id="clickSound" src="click-sound.wav"></audio>
+	<audio id="bgMusic" src="background-music.wav" loop></audio>
+	<audio id="itemSound" src="item-sound.wav"></audio>
+	<audio id="gameOverSound" src="game-over.wav"></audio>
+	
+	<script>
+	let score = 0;
+    let timeLeft = 0; // 게임 시간 설정 (10초)
+    let highScore = localStorage.getItem("highScore") || 0;
+    let timerInterval;
+	let gameRunning = false;
+	let difficulty = 'easy'; // 기본 난이도 설정
+	let scoreIncrement = 1;
+	let timerDecrement = 1;
+	
+    const scoreDisplay = document.getElementById("score");
+    const clickButton = document.getElementById("clickButton");
+    const timerDisplay = document.getElementById("timer");
+    const highScoreDisplay = document.createElement("div");
+    const clickSound = document.getElementById("clickSound");
+	const bgMusic = document.getElementById("bgMusic");
+	const itemSound = document.getElementById("itemSound");
+	const gameOverSound = document.getElementById("gameOverSound");
+
+	highScoreDisplay.textContent = `최고 점수: ${highScore}`;
+    highScoreDisplay.style.fontSize = "20px";
+    highScoreDisplay.style.marginBottom = "10px";
+    document.body.insertBefore(highScoreDisplay, clickButton);
+	
+	function startGame(duration) {
+		score = 0;
+		scoreDisplay.textContent = `점수: ${score}`;
+		timeLeft = duration;
+		gameRunning = true;
+		clickButton.disabled = false;
+		timerDisplay.textContent = timeLeft > 0 ? `남은 시간: ${timeLeft}초` : "무제한 모드";
+		clickButton.textContent = "클릭하세요!";
+			
+		// 배경 음악 재생
+		bgMusic.volume = 0.5;
+		bgMusic.play();
+		
+		if (timerInterval) clearInterval(timerInterval);
+		if (timeLeft > 0) {
+			timerInterval = setInterval(() => {
+				timeLeft -= timerDecrement; // 난이도에 따라 타이머 감소량 조정
+				timerDisplay.textContent = `남은 시간: ${timeLeft}초`;
+				
+				if (timeLeft <= 0) {
+					clearInterval(timerInterval);
+					endGame();
+				}
+			}, 1000);
+		}
+	}
+
+	function endGame() {
+		clickButton.disabled = true;
+		gameRunning = false;
+		clickButton.textContent = "게임 종료";
+		
+		// 게임 오버 효과음 재생
+		gameOverSound.currentTime = 0;
+		gameOverSound.play();
+
+		// 배경 음악 정지
+		bgMusic.pause();
+		bgMusic.currentTime = 0;
+		
+		if (score > highScore) {
+			highScore = score;
+			localStorage.setItem("highScore", highScore);
+			highScoreDisplay.textContent = `최고 점수: ${highScore}`;
+		}
+		
+		saveScore(score);
+		
+		alert(`게임 종료! 최종 점수: ${score}`);
+	}
+	
+	clickButton.addEventListener("click", handleClick);
+	clickButton.addEventListener("touchstart", handleClick);
+	
+	function handleClick(event) {
+		event.preventDefault(); // 모바일에서 터치 지연 방지
+		if (!gameRunning) return;
+	
+		score += scoreIncrement; // 난이도에 따른 점수 증가량 적용
+		scoreDisplay.textContent = `점수: ${score}`;
+		
+		// 효과음 재생
+		clickSound.currentTime = 0; // 빠르게 연속 클릭할 때도 효과음이 재생되도록
+		clickSound.play();
+		
+		// 점수 애니메이션 적용
+		scoreDisplay.style.animation = "scorePop 0.3s ease";
+		setTimeout(() => {
+			scoreDisplay.style.animation = "";
+		}, 300);
+		
+		// 최고 점수 갱신
+		if (score > highScore) {
+			highScore = score;
+			localStorage.setItem("highScore", highScore);
+			highScoreDisplay.textContent = `최고 점수: ${highScore}`;
+			
+			// 최고 점수 애니메이션 적용
+			highScoreDisplay.style.animation = "scorePop 0.3s ease";
+			setTimeout(() => {
+				highScoreDisplay.style.animation = "";
+			}, 300);
+		}
+	}
+	
+	function setDifficulty(level) {
+		difficulty = level;
+		if (level === 'easy') {
+			scoreIncrement = 2;
+			timerDecrement = 1;
+		} else if (level === 'normal') {
+			scoreIncrement = 1;
+			timerDecrement = 1;
+		} else if (level === 'hard') {
+			scoreIncrement = 1;
+			timerDecrement = 2;
+		}
+		alert(`난이도가 ${level.toUpperCase()}로 설정되었습니다!`);
+	}
+	
+	function spawnItem() {
+		if (!gameRunning) return;
+
+		let item = document.getElementById("specialItem");
+		let randomX = Math.random() * 80 + 10; // 10% ~ 90% 위치
+		let randomY = Math.random() * 80 + 10;
+
+		item.style.left = `${randomX}%`;
+		item.style.top = `${randomY}%`;
+		item.style.display = "block";
+
+		// 3초 후 사라지게 설정
+		setTimeout(() => {
+			item.style.display = "none";
+		}, 3000);
+	}
+
+	// 일정 확률로 아이템이 나타나도록 설정
+	setInterval(() => {
+		if (Math.random() < 1.0) { // 30% 확률로 아이템 등장
+			spawnItem();
+		}
+	}, 5000);
+	
+	function collectItem() {
+		let item = document.getElementById("specialItem");
+		item.style.display = "none";
+
+		itemSound.currentTime = 0;
+		itemSound.play();
+	
+		// 보너스 효과 적용
+		if (Math.random() < 0.5) { // 50% 확률로 점수 보너스
+			score += 5;
+			alert("🎉 점수 +5 보너스!");
+		} else { // 50% 확률로 시간 보너스
+			timeLeft += 3;
+			alert("⏳ 시간 +3초 증가!");
+		}
+
+		// 점수 업데이트
+		scoreDisplay.textContent = `점수: ${score}`;
+		timerDisplay.textContent = `남은 시간: ${timeLeft}초`;
+	}
+	
+	function saveScore(finalScore) {
+		let scores = JSON.parse(localStorage.getItem("scores")) || [];
+		scores.push(finalScore);
+		scores.sort((a, b) => b - a); // 내림차순 정렬
+		scores = scores.slice(0, 5); // 상위 5개 점수만 저장
+		localStorage.setItem("scores", JSON.stringify(scores));
+		
+		displayScores();
+	}
+	
+	function displayScores() {
+		let scores = JSON.parse(localStorage.getItem("scores")) || [];
+		let scoreList = document.getElementById("scoreList");
+		scoreList.innerHTML = "<h3>🏆 최근 최고 점수</h3>";
+		
+		scores.forEach((score, index) => {
+			scoreList.innerHTML += `<p>${index + 1}. ${score} 점</p>`;
+		});
+	}
+	
+	function shareScore() {
+		let scores = JSON.parse(localStorage.getItem("scores")) || [];
+		if (scores.length === 0) {
+			alert("아직 저장된 점수가 없어요! 😢");
+			return;
+		}
+
+		let topScore = scores[0]; // 최고 점수 가져오기
+		let shareText = `내 최고 점수는 ${topScore}점이야! 너도 도전해봐! 🔥`;
+		let shareUrl = `https://yourgame.com?score=${topScore}`;
+		
+		navigator.clipboard.writeText(`${shareText} ${shareUrl}`).then(() => {
+			alert("점수가 복사되었어요! 친구에게 공유해보세요. 🎉");
+		});
+	}
+	
+	displayScores();
+	</script>
+</body>
+</html>
