@@ -7,11 +7,13 @@
     <style>
         body {
             text-align: center;
+            background-color: #f0f0f0;
         }
         canvas {
-            background-color: lightblue;
+            background-color: white;
             display: block;
-            margin: auto;
+            margin: 20px auto;
+            border: 2px solid black;
         }
     </style>
 </head>
@@ -23,13 +25,13 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "green";
-            ctx.fillRect(180, 450, 40, 40); // 임시 플레이어 블록
+        // 캔버스에 배경색 채우기
+        function drawBackground() {
+            ctx.fillStyle = "lightblue";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
         
-        draw();
+        drawBackground();
     </script>
 </body>
 </html>
