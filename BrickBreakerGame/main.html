@@ -44,6 +44,14 @@
             bricks[c][r] = { x: 0, y: 0, status: 1 };
         }
     }
+
+    let score = 0;
+    
+    function drawScore() {
+        ctx.font = "16px Arial";
+        ctx.fillStyle = "black";
+        ctx.fillText("점수: " + score, 8, 20);
+    }
         
     // 공 그리기
     function drawBall() {
@@ -133,9 +141,18 @@
                     ) {
                         ballDY = -ballDY;
                         brick.status = 0; // 벽돌 제거
+                        score += 10; // 점수 증가
+                        increaseDifficulty(); // 난이도 증가 체크
                     }
                 }
             }
+        }
+    }
+
+    function increaseDifficulty() {
+        if (score % 50 === 0 && score > 0) {
+            ballDX *= 1.1;
+            ballDY *= 1.1;
         }
     }
 
@@ -161,6 +178,7 @@
         drawBricks();
         drawBall();
         drawPaddle();
+        drawScore(); // 점수 표시
         updateBallPosition();
         movePaddle();
         checkPaddleCollision();
