@@ -22,22 +22,12 @@
 	</div>
     <canvas id="gameCanvas"></canvas>
     <script>
-	document.addEventListener("DOMContentLoaded", () => {
-		resizeCanvas();
-		gameLoop();
-	});
+    document.addEventListener("DOMContentLoaded", () => {
         const canvas = document.getElementById("gameCanvas");
-
-    	function resizeCanvas() {
-	    canvas.width = window.innerWidth;
-	    canvas.height = window.innerHeight;
-	}
-	window.addEventListener("resize", resizeCanvas);
-	window.onload = resizeCanvas; // 페이지 로드 시 캔버스 크기 설정
         const ctx = canvas.getContext("2d");
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-	
+    	canvas.width = window.innerWidth;
+    	canvas.height = window.innerHeight;
+	    
 	let catX = canvas.width / 2 - 25;
 	let catY = canvas.height / 2 - 25;
 	let speed = 5;
@@ -203,6 +193,7 @@
 				createSword();
 			}        
 		}, spawnRate);
+    });
     </script>
 </body>
 </html>
