@@ -54,7 +54,14 @@
 	});
 	
 	canvas.addEventListener("mousedown", (event) => {
-		isDragging = true;
+		if (
+		    event.clientX >= catX &&
+		    event.clientX <= catX + 25 &&
+		    event.clientY >= catY &&
+		    event.clientY <= catY + 25
+		  ) {
+		    isDragging = true;
+		  }
 	});
 	
 	canvas.addEventListener("mousemove", (event) => {
