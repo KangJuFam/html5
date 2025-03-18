@@ -25,6 +25,8 @@
 	    
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
+    	canvas.width = window.innerWidth;
+    	canvas.height = window.innerHeight;
 	function startGame() {	    
 	let catX = canvas.width / 2 - 25;
 	let catY = canvas.height / 2 - 25;
