@@ -22,15 +22,16 @@
 	</div>
     <canvas id="gameCanvas"></canvas>
     <script>
+	    
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
+	function startGame() {
     	canvas.width = window.innerWidth;
     	canvas.height = window.innerHeight;
 	    
 	let catX = canvas.width / 2 - 25;
 	let catY = canvas.height / 2 - 25;
 
-	    alert(canvas.width + ' : ' + canvas.height);
 	let speed = 5;
 	let keys = {};
 	
@@ -194,6 +195,14 @@
 				createSword();
 			}        
 		}, spawnRate);
+
+	    }
+    const checkCanvasSize = setInterval(() => {
+      if (canvas.width >= 400 && canvas.height >= 400) {
+        clearInterval(checkCanvasSize);
+        startGame();
+      }
+    }, 100);
     </script>
 </body>
 </html>
