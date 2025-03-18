@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고양이 vs. 매화검</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+        }
+        canvas {
+            display: block;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+	<div id="score" style="position: absolute; top: 10px; left: 10px; font-size: 24px; color: black; font-weight: bold; background-color: rgba(255, 255, 255, 0.7); padding: 5px; border-radius: 5px;">
+		생존 시간: 0초
+	</div>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+		let catX = canvas.width / 2 - 25;
+		let catY = canvas.height / 2 - 25;
+		let speed = 5;
+		let keys = {};
+		
+		let isDragging = false;
+
+		let swords = [];
+		let gameTime = 0;
+		
+		let spawnRate = 1000; // 초기 검기 생성 주기 (1초)
+		let additionalSwords = 0; // 추가 생성할 검기 개수
+
+		let isGameOver = false;
+
+		window.addEventListener("keydown", (event) => {
+			keys[event.key] = true;
+		});
+
+		window.addEventListener("keyup", (event) => {
+			keys[event.key] = false;
+		});
+		
+		canvas.addEventListener("mousedown", (event) => {
+			isDragging = true;
+		});
+		
+		canvas.addEventListener("mousemove", (event) => {
+			if (isDragging) {
+				catX = event.clientX - 25;
+				catY = event.clientY - 25;
+			}
+		});
+		
+		canvas.addEventListener("mouseup", () => {
+			isDragging = false;
+		});
+
+		canvas.addEventListener("touchmove", (event) => {
+			let touch = event.touches[0];
+			catX = touch.clientX - 25;
+			catY = touch.clientY - 25;
+		});
+		
+        function drawCat() {
+            ctx.fillStyle = "orange";
+            ctx.fillRect(canvas.width / 2 - 25, canvas.height / 2 - 25, 50, 50);
+        }
+		
+		function moveCat() {
+			if (keys["ArrowLeft"] && catX > 0) catX -= speed;
+			if (keys["ArrowRight"] && catX < canvas.width - 50) catX += speed;
+			if (keys["ArrowUp"] && catY > 0) catY -= speed;
+			if (keys["ArrowDown"] && catY < canvas.height - 50) catY += speed;
+		}
+		
+		function createSword() {
+			let side = Math.floor(Math.random() * 4);
+			let x, y;
+
+			if (side === 0) {
+				x = Math.random() * canvas.width;
+				y = -10;
+			} else if (side === 1) {
+				x = Math.random() * canvas.width;
+				y = canvas.height + 10;
+			} else if (side === 2) {
+				x = -10;
+				y = Math.random() * canvas.height;
+			} else {
+				x = canvas.width + 10;
+				y = Math.random() * canvas.height;
+			}
+
+			let angle = Math.atan2(catY + 25 - y, catX + 25 - x);
+			let acceleration = gameTime > 30 ? 0.2 : 0.1; // 30초 이후 가속도 증가
+			let speed = Math.min(2 + gameTime * acceleration, 10); // 최대 속도 10 제한
+
+			swords.push({ x, y, angle, speed });
+		}
+
+		function updateSwords() {
+			swords = swords.filter(sword => {
+				sword.x += Math.cos(sword.angle) * sword.speed;
+				sword.y += Math.sin(sword.angle) * sword.speed;
+
+				return sword.x >= -10 && sword.x <= canvas.width + 10 &&
+					   sword.y >= -10 && sword.y <= canvas.height + 10;
+			});
+		}
+
+		function drawSwords() {
+			ctx.fillStyle = "red";
+			swords.forEach(sword => {
+				ctx.beginPath();
+				ctx.arc(sword.x, sword.y, 10, 0, Math.PI * 2);
+				ctx.fill();
+			});
+		}
+		
+		function checkCollision() {
+			swords.forEach(sword => {
+				let dx = sword.x - (catX + 25);
+				let dy = sword.y - (catY + 25);
+				let distance = Math.sqrt(dx * dx + dy * dy);
+				
+				if (distance < 30) { // 고양이 크기 + 검기 크기 고려
+					
+					if (!isGameOver) {
+						isGameOver = true;
+						setTimeout(() => {
+							gameOver();
+						}, 100);
+					}
+				}
+			});
+		}
+
+		function gameOver() {
+			let title = getTitle(gameTime);
+			alert("게임 오버! 🐱💀\n칭호: " + title + "\n생존 시간: " + gameTime + "초");
+			location.reload(); // 게임 새로고침
+		}
+		
+		function updateScore() {
+			document.getElementById("score").innerText = "생존 시간: " + gameTime + "초";
+		}
+		
+		function getTitle(time) {
+			if (time < 20) return "초보 고양이";
+			if (time < 40) return "고양이 협객";
+			if (time < 60) return "매화검의 달인";
+			return "전설의 무림묘";
+		}
+
+        function gameLoop() {
+			if (isGameOver) return; // 게임 오버 시 draw() 중단
+			
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+			moveCat();
+			updateSwords();
+			drawSwords();
+			checkCollision();
+			updateScore();
+			ctx.fillStyle = "orange";
+			ctx.fillRect(catX, catY, 50, 50);
+			requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+		
+		setInterval(() => {
+			gameTime += 1;
+			createSword();
+			
+			// 5초마다 검기 생성 간격 감소, 추가 검기 개수 증가
+			if (gameTime % 5 === 0) {
+				spawnRate = Math.max(spawnRate - 100, 300);
+				additionalSwords = Math.min(additionalSwords + 5, 100);
+			}
+			
+			for (let i = 0; i < additionalSwords; i++) {
+				createSword();
+			}        
+		}, spawnRate);
+    </script>
+</body>
+</html>
