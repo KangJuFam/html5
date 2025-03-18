@@ -25,10 +25,7 @@
 	    
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-	function startGame() {
-    	canvas.width = window.innerWidth;
-    	canvas.height = window.innerHeight;
-	    
+	function startGame() {	    
 	let catX = canvas.width / 2 - 25;
 	let catY = canvas.height / 2 - 25;
 
@@ -198,6 +195,9 @@
 
 	    }
     const checkCanvasSize = setInterval(() => {
+	    
+    	canvas.width = window.innerWidth;
+    	canvas.height = window.innerHeight;
       if (canvas.width >= 400 && canvas.height >= 400) {
         clearInterval(checkCanvasSize);
         startGame();
