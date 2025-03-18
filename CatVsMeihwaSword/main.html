@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -127,6 +128,13 @@
 				ctx.arc(sword.x, sword.y, 10, 0, Math.PI * 2);
 				ctx.fill();
 			});
+			
+			ctx.font = "30px sans-serif";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			swords.forEach(sword => {
+			  ctx.fillText("🌸", sword.x, sword.y);
+			});
 		}
 		
 		function checkCollision() {
@@ -173,8 +181,11 @@
 			drawSwords();
 			checkCollision();
 			updateScore();
-			ctx.fillStyle = "orange";
-			ctx.fillRect(catX, catY, 50, 50);
+			
+			ctx.font = "50px sans-serif";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText("🐱", catX + 25, catY + 25);
 			requestAnimationFrame(gameLoop);
         }
 
