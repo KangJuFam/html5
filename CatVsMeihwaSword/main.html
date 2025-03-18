@@ -29,8 +29,8 @@
     	canvas.width = window.innerWidth;
     	canvas.height = window.innerHeight;
 	function startGame() {	    
-	let catX = canvas.width / 2 - 25;
-	let catY = canvas.height / 2 - 25;
+	let catX = canvas.width / 2 - 12.5;
+	let catY = canvas.height / 2 - 12.5;
 
 	let speed = 5;
 	let keys = {};
@@ -59,8 +59,8 @@
 	
 	canvas.addEventListener("mousemove", (event) => {
 		if (isDragging) {
-			catX = event.clientX - 25;
-			catY = event.clientY - 25;
+			catX = event.clientX - 12.5;
+			catY = event.clientY - 12.5;
 		}
 	});
 	
@@ -70,20 +70,15 @@
 
 	canvas.addEventListener("touchmove", (event) => {
 		let touch = event.touches[0];
-		catX = touch.clientX - 25;
-		catY = touch.clientY - 25;
+		catX = touch.clientX - 12.5;
+		catY = touch.clientY - 12.5;
 	});
-		
-        function drawCat() {
-            ctx.fillStyle = "orange";
-            ctx.fillRect(canvas.width / 2 - 25, canvas.height / 2 - 25, 50, 50);
-        }
 		
 		function moveCat() {
 			if (keys["ArrowLeft"] && catX > 0) catX -= speed;
-			if (keys["ArrowRight"] && catX < canvas.width - 50) catX += speed;
+			if (keys["ArrowRight"] && catX < canvas.width - 25) catX += speed;
 			if (keys["ArrowUp"] && catY > 0) catY -= speed;
-			if (keys["ArrowDown"] && catY < canvas.height - 50) catY += speed;
+			if (keys["ArrowDown"] && catY < canvas.height - 25) catY += speed;
 		}
 		
 		function createSword() {
@@ -104,7 +99,7 @@
 				y = Math.random() * canvas.height;
 			}
 
-			let angle = Math.atan2(catY + 25 - y, catX + 25 - x);
+			let angle = Math.atan2(catY + 12.5 - y, catX + 12.5 - x);
 			let acceleration = gameTime > 30 ? 0.2 : 0.1; // 30초 이후 가속도 증가
 			let speed = Math.min(2 + gameTime * acceleration, 10); // 최대 속도 10 제한
 
@@ -116,20 +111,13 @@
 				sword.x += Math.cos(sword.angle) * sword.speed;
 				sword.y += Math.sin(sword.angle) * sword.speed;
 
-				return sword.x >= -10 && sword.x <= canvas.width + 10 &&
-					   sword.y >= -10 && sword.y <= canvas.height + 10;
+				return sword.x >= -5 && sword.x <= canvas.width + 5 &&
+					   sword.y >= -5 && sword.y <= canvas.height + 5;
 			});
 		}
 
 		function drawSwords() {
-			ctx.fillStyle = "red";
-			swords.forEach(sword => {
-				ctx.beginPath();
-				ctx.arc(sword.x, sword.y, 10, 0, Math.PI * 2);
-				ctx.fill();
-			});
-			
-			ctx.font = "30px sans-serif";
+			ctx.font = "15px sans-serif";
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
 			swords.forEach(sword => {
@@ -139,11 +127,11 @@
 		
 		function checkCollision() {
 			swords.forEach(sword => {
-				let dx = sword.x - (catX + 25);
-				let dy = sword.y - (catY + 25);
+				let dx = sword.x - (catX + 12.5);
+				let dy = sword.y - (catY + 12.5);
 				let distance = Math.sqrt(dx * dx + dy * dy);
 				
-				if (distance < 30) { // 고양이 크기 + 검기 크기 고려
+				if (distance < 18) { // 고양이 크기 + 검기 크기 고려
 					
 					if (!isGameOver) {
 						isGameOver = true;
@@ -182,10 +170,10 @@
 			checkCollision();
 			updateScore();
 			
-			ctx.font = "50px sans-serif";
+			ctx.font = "25px sans-serif";
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
-			ctx.fillText("🐱", catX + 25, catY + 25);
+			ctx.fillText("🐱", catX + 12.5, catY + 12.5);
 			requestAnimationFrame(gameLoop);
         }
 
