@@ -26,50 +26,55 @@
         const ctx = canvas.getContext("2d");
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+	
+    	let isCollisionCheckActive = false; // 충돌 체크 활성화 여부
+	let catX = canvas.width / 2 - 25;
+	let catY = canvas.height / 2 - 25;
+	let speed = 5;
+	let keys = {};
+	
+	let isDragging = false;
 
-		let catX = canvas.width / 2 - 25;
-		let catY = canvas.height / 2 - 25;
-		let speed = 5;
-		let keys = {};
-		
-		let isDragging = false;
+	let swords = [];
+	let gameTime = 0;
+	
+	let spawnRate = 1000; // 초기 검기 생성 주기 (1초)
+	let additionalSwords = 0; // 추가 생성할 검기 개수
 
-		let swords = [];
-		let gameTime = 0;
-		
-		let spawnRate = 1000; // 초기 검기 생성 주기 (1초)
-		let additionalSwords = 0; // 추가 생성할 검기 개수
+	let isGameOver = false;
+	// 게임 시작 후 2초 뒤에 충돌 체크 활성화
+	setTimeout(() => {
+	    isCollisionCheckActive = true;
+	}, 2000);
+	    
+	window.addEventListener("keydown", (event) => {
+		keys[event.key] = true;
+	});
 
-		let isGameOver = false;
+	window.addEventListener("keyup", (event) => {
+		keys[event.key] = false;
+	});
+	
+	canvas.addEventListener("mousedown", (event) => {
+		isDragging = true;
+	});
+	
+	canvas.addEventListener("mousemove", (event) => {
+		if (isDragging) {
+			catX = event.clientX - 25;
+			catY = event.clientY - 25;
+		}
+	});
+	
+	canvas.addEventListener("mouseup", () => {
+		isDragging = false;
+	});
 
-		window.addEventListener("keydown", (event) => {
-			keys[event.key] = true;
-		});
-
-		window.addEventListener("keyup", (event) => {
-			keys[event.key] = false;
-		});
-		
-		canvas.addEventListener("mousedown", (event) => {
-			isDragging = true;
-		});
-		
-		canvas.addEventListener("mousemove", (event) => {
-			if (isDragging) {
-				catX = event.clientX - 25;
-				catY = event.clientY - 25;
-			}
-		});
-		
-		canvas.addEventListener("mouseup", () => {
-			isDragging = false;
-		});
-
-		canvas.addEventListener("touchmove", (event) => {
-			let touch = event.touches[0];
-			catX = touch.clientX - 25;
-			catY = touch.clientY - 25;
-		});
+	canvas.addEventListener("touchmove", (event) => {
+		let touch = event.touches[0];
+		catX = touch.clientX - 25;
+		catY = touch.clientY - 25;
+	});
 		
         function drawCat() {
             ctx.fillStyle = "orange";
@@ -128,6 +133,7 @@
 		}
 		
 		function checkCollision() {
+    			if (!isCollisionCheckActive) return; // 2초 이전에는 충돌 체크하지 않음
 			swords.forEach(sword => {
 				let dx = sword.x - (catX + 25);
 				let dy = sword.y - (catY + 25);
