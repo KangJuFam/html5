@@ -22,6 +22,10 @@
 	</div>
     <canvas id="gameCanvas"></canvas>
     <script>
+	document.addEventListener("DOMContentLoaded", () => {
+		resizeCanvas();
+		gameLoop();
+	});
         const canvas = document.getElementById("gameCanvas");
 
     	function resizeCanvas() {
