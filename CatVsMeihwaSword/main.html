@@ -47,6 +47,9 @@
 	    
 	window.addEventListener("keydown", (event) => {
 		keys[event.key] = true;
+		if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
+		        event.preventDefault();
+		    }
 	});
 
 	window.addEventListener("keyup", (event) => {
@@ -79,7 +82,8 @@
 		let touch = event.touches[0];
 		catX = touch.clientX - 12.5;
 		catY = touch.clientY - 12.5;
-	});
+		event.preventDefault(); // 🔹 iframe 내부 터치 스크롤 방지
+	}, { passive: false });
 		
 		function moveCat() {
 			if (keys["ArrowLeft"] && catX > 0) catX -= speed;
