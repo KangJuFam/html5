@@ -78,13 +78,34 @@
 		isDragging = false;
 	});
 
-	canvas.addEventListener("touchmove", (event) => {
-		let touch = event.touches[0];
-		catX = touch.clientX - 12.5;
-		catY = touch.clientY - 12.5;
-		event.preventDefault(); // 🔹 iframe 내부 터치 스크롤 방지
+	canvas.addEventListener("touchstart", (event) => {
+	    let touch = event.touches[0];
+	
+	    // 🔹 고양이 영역 안에서 터치했을 때만 드래그 활성화
+	    if (
+	        touch.clientX >= catX &&
+	        touch.clientX <= catX + 25 &&
+	        touch.clientY >= catY &&
+	        touch.clientY <= catY + 25
+	    ) {
+	        isDragging = true;
+	    }
 	}, { passive: false });
-		
+
+	canvas.addEventListener("touchmove", (event) => {
+	    if (!isDragging) return; // 🔹 드래그 상태일 때만 이동
+	
+	    event.preventDefault();
+	    let touch = event.touches[0];
+	
+	    catX = touch.clientX - 12.5;
+	    catY = touch.clientY - 12.5;
+	}, { passive: false });
+	
+	canvas.addEventListener("touchend", () => {
+	    isDragging = false; // 터치가 끝나면 드래그 해제
+	});
+			
 		function moveCat() {
 			if (keys["ArrowLeft"] && catX > 0) catX -= speed;
 			if (keys["ArrowRight"] && catX < canvas.width - 25) catX += speed;
