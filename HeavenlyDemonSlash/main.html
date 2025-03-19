@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>천마 생존 게임</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: black; }
+        canvas { display: block; background: radial-gradient(#222, black); }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let cameraZ = 0; // 플레이어 전진 효과
+
+        function update() {
+            cameraZ += 5; // 화면이 앞으로 이동하는 효과
+            draw();
+            requestAnimationFrame(update);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 바닥을 그려서 전진하는 느낌 주기
+            ctx.fillStyle = "gray";
+            for (let i = 0; i < 20; i++) {
+                let depth = cameraZ + i * 50;
+                let size = 20000 / depth; // 원근감 표현
+                ctx.fillRect(canvas.width / 2 - size / 2, canvas.height - size * 2, size, 5);
+            }
+        }
+
+        update(); // 게임 루프 시작
+    </script>
+</body>
+</html>
