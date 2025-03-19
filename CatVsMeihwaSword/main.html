@@ -170,7 +170,43 @@
 			if (time < 60) return "매화검의 달인";
 			return "전설의 무림묘";
 		}
+	
+	let lastSpawnTime = 0;
+	let lastGameTime = 0;
+	
+	function spawnSwords(timestamp) {
+	    if (isGameOver) return;
+	
+	    // 1초마다 정확하게 gameTime 증가
+	    let currentGameTime = Math.floor(timestamp / 1000);
+	    if (currentGameTime > lastGameTime) {
+	        gameTime += 1;
+	        lastGameTime = currentGameTime;
+	    }
+	
+	    if (timestamp - lastSpawnTime > spawnRate) {
+	        createSword();
+	
+	        // 5초마다 검기 생성 속도 증가 & 추가 검기 개수 제한
+	        if (gameTime % 5 === 0) {
+	            spawnRate = Math.max(spawnRate - 100, 300);
+	            additionalSwords = Math.min(additionalSwords + 5, 100); // 최대 100개 제한
+	        }
+	
+	        for (let i = 0; i < additionalSwords; i++) {
+	            createSword();
+	        }
+	
+	        lastSpawnTime = timestamp;
+	    }
+	
+	    requestAnimationFrame(spawnSwords);
+	}
+	
 
+
+
+		
         function gameLoop() {
 			if (isGameOver) return; // 게임 오버 시 draw() 중단
 			
@@ -189,22 +225,9 @@
         }
 
         gameLoop();
-		
-		setInterval(() => {
-			gameTime += 1;
-			createSword();
-			
-			// 5초마다 검기 생성 간격 감소, 추가 검기 개수 증가
-			if (gameTime % 5 === 0) {
-				spawnRate = Math.max(spawnRate - 100, 300);
-				additionalSwords = Math.min(additionalSwords + 5, 100);
-			}
-			
-			for (let i = 0; i < additionalSwords; i++) {
-				createSword();
-			}        
-		}, spawnRate);
-
+	requestAnimationFrame(spawnSwords);
+	
+	
 	    }
     const checkCanvasSize = setInterval(() => {
 	    
