@@ -73,6 +73,9 @@
         #gameOverScreen {
             display: none; /* 기본적으로 숨김 */
         }
+        #sharePopup {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -93,6 +96,18 @@
             <button id="shareButton">자랑하기</button>
         </div>
     </div>
+    
+    <div id="sharePopup" class="overlay">
+        <div style="background-color: white; padding: 20px; border-radius: 8px; color: black; max-width: 300px;">
+            <h2>결과 자랑하기</h2>
+            <p>아래 문구를 복사하여 친구들에게 공유하세요!</p>
+            <textarea id="shareText" rows="3" style="width: 100%; margin-bottom: 10px;"></textarea>
+            <div style="display: flex; justify-content: space-between;">
+                <button id="copyButton" style="background-color: #4CAF50;">복사</button>
+                <button id="closeButton" style="background-color: #f44336;">닫기</button>
+            </div>
+        </div>
+    </div>
 
     <canvas id="gameCanvas"></canvas>
 
@@ -105,6 +120,12 @@
         const startButton = document.getElementById("startButton");
         const restartButton = document.getElementById("restartButton");
         const shareButton = document.getElementById("shareButton");
+        
+        // 공유 팝업 관련 변수들
+        const sharePopup = document.getElementById("sharePopup");
+        const shareTextarea = document.getElementById("shareText");
+        const copyButton = document.getElementById("copyButton");
+        const closeButton = document.getElementById("closeButton");
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
@@ -145,6 +166,7 @@
             // 화면 전환
             startScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
+            sharePopup.style.display = 'none';
             scoreElement.style.display = 'block';
             
             // 게임 루프 시작
@@ -185,7 +207,7 @@
                 sword.x += Math.cos(sword.angle) * sword.speed;
                 sword.y += Math.sin(sword.angle) * sword.speed;
                 return sword.x >= -10 && sword.x <= canvas.width + 10 &&
-                       sword.y >= -10 && sword.y <= canvas.height + 10;
+                        sword.y >= -10 && sword.y <= canvas.height + 10;
             });
         }
 
@@ -255,43 +277,36 @@
         
         // --- 이벤트 리스너 (한 번만 등록) ---
         startButton.addEventListener('click', startGame);
-        restartButton.addEventListener('click', startGame); // 다시하기 버튼도 startGame 호출
+        restartButton.addEventListener('click', startGame);
 
+        // 자랑하기 버튼 클릭 시 팝업 열기
         shareButton.addEventListener('click', () => {
             const title = getTitle(gameTime);
-            // 원하는 텍스트를 복사할 임시 input 요소를 생성합니다.
-            const textToCopy = `${title} 칭호를 얻었다! (생존 시간: ${gameTime}초) https://commutemochabread.tistory.com/99`;
+            const textToShare = `${title} 칭호를 얻었다! (생존 시간: ${gameTime}초) https://kangjufam.github.io/html5/CatVsMeihwaSword/main.html`;
             
-            const tempInput = document.createElement('textarea');
-            tempInput.value = textToCopy;
-            tempInput.style.position = 'absolute';
-            tempInput.style.left = '-9999px';
-            document.body.appendChild(tempInput);
-            tempInput.select();
-        
-            try {
-                // execCommand를 사용하여 텍스트를 복사합니다.
-                document.execCommand('copy');
-                shareButton.innerText = '복사 완료!';
+            shareTextarea.value = textToShare;
+            sharePopup.style.display = 'flex';
+        });
+
+        // 팝업 내 복사 버튼
+        copyButton.addEventListener('click', () => {
+            shareTextarea.select();
+            
+            navigator.clipboard.writeText(shareTextarea.value).then(() => {
+                copyButton.innerText = '복사 완료!';
                 setTimeout(() => {
-                    shareButton.innerText = '자랑하기';
+                    copyButton.innerText = '복사';
                 }, 1500);
-            } catch (err) {
-                console.error('클립보드 복사 실패:', err);
-                // 사용자에게 복사 실패를 알리기 위한 메시지 박스 또는 UI를 추가할 수 있습니다.
-                // alert() 대신 커스텀 메시지를 띄우는 것이 좋습니다.
-                const messageBox = document.createElement('div');
-                messageBox.innerText = '복사에 실패했습니다.';
-                messageBox.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
-                document.body.appendChild(messageBox);
-                setTimeout(() => {
-                    messageBox.remove();
-                }, 2000);
-            } finally {
-                // 임시 input 요소를 제거합니다.
-                document.body.removeChild(tempInput);
-            }
-        });        
+            }).catch(err => {
+                alert('자동 복사에 실패했습니다. 텍스트를 직접 복사해 주세요.');
+            });
+        });
+
+        // 팝업 내 닫기 버튼
+        closeButton.addEventListener('click', () => {
+            sharePopup.style.display = 'none';
+            copyButton.innerText = '복사';
+        });
 
         window.addEventListener("keydown", (event) => {
             keys[event.key] = true;
@@ -344,7 +359,6 @@
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            // 게임이 진행 중이 아닐 때만 고양이 위치를 재조정
             if (isGameOver) {
                 catX = canvas.width / 2 - 12.5;
                 catY = canvas.height / 2 - 12.5;
