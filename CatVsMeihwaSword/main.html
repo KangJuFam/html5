@@ -259,7 +259,7 @@
 
         shareButton.addEventListener('click', () => {
             const title = getTitle(gameTime);
-            const textToCopy = `${title} 칭호를 얻었다! (생존 시간: ${gameTime}초) www.abc.com`;
+            const textToCopy = `${title} 칭호를 얻었다! (생존 시간: ${gameTime}초) https://commutemochabread.tistory.com/99`;
             
             navigator.clipboard.writeText(textToCopy).then(() => {
                 shareButton.innerText = '복사 완료!';
