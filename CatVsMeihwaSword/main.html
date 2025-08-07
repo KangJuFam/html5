@@ -259,18 +259,39 @@
 
         shareButton.addEventListener('click', () => {
             const title = getTitle(gameTime);
+            // 원하는 텍스트를 복사할 임시 input 요소를 생성합니다.
             const textToCopy = `${title} 칭호를 얻었다! (생존 시간: ${gameTime}초) https://commutemochabread.tistory.com/99`;
             
-            navigator.clipboard.writeText(textToCopy).then(() => {
+            const tempInput = document.createElement('textarea');
+            tempInput.value = textToCopy;
+            tempInput.style.position = 'absolute';
+            tempInput.style.left = '-9999px';
+            document.body.appendChild(tempInput);
+            tempInput.select();
+        
+            try {
+                // execCommand를 사용하여 텍스트를 복사합니다.
+                document.execCommand('copy');
                 shareButton.innerText = '복사 완료!';
                 setTimeout(() => {
                     shareButton.innerText = '자랑하기';
                 }, 1500);
-            }).catch(err => {
+            } catch (err) {
                 console.error('클립보드 복사 실패:', err);
-                alert('링크 복사에 실패했습니다.');
-            });
-        });
+                // 사용자에게 복사 실패를 알리기 위한 메시지 박스 또는 UI를 추가할 수 있습니다.
+                // alert() 대신 커스텀 메시지를 띄우는 것이 좋습니다.
+                const messageBox = document.createElement('div');
+                messageBox.innerText = '복사에 실패했습니다.';
+                messageBox.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+                document.body.appendChild(messageBox);
+                setTimeout(() => {
+                    messageBox.remove();
+                }, 2000);
+            } finally {
+                // 임시 input 요소를 제거합니다.
+                document.body.removeChild(tempInput);
+            }
+        });        
 
         window.addEventListener("keydown", (event) => {
             keys[event.key] = true;
