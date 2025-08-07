@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -10,255 +9,326 @@
             margin: 0;
             overflow: hidden;
             background-color: black;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
         canvas {
             display: block;
             background-color: #f0f0f0;
         }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: black;
+            font-weight: bold;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: none; /* 게임 시작 전에는 숨김 */
+        }
+        /* 시작 및 게임 오버 화면 공통 스타일 */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+        .overlay h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        .overlay p {
+            font-size: 1.5em;
+            margin: 10px 0;
+        }
+        .overlay button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #4CAF50;
+            color: white;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .overlay .button-group {
+            margin-top: 20px;
+        }
+        .overlay .button-group button {
+            margin: 0 10px;
+        }
+        #startScreen {
+            display: flex; /* 기본적으로 보이게 설정 */
+        }
+        #gameOverScreen {
+            display: none; /* 기본적으로 숨김 */
+        }
     </style>
 </head>
 <body>
-	<div id="score" style="position: absolute; top: 10px; left: 10px; font-size: 24px; color: black; font-weight: bold; background-color: rgba(255, 255, 255, 0.7); padding: 5px; border-radius: 5px;">
-		생존 시간: 0초
-	</div>
+    <div id="score">생존 시간: 0초</div>
+
+    <div id="startScreen" class="overlay">
+        <h1>고양이 vs. 매화검 🌸</h1>
+        <p>키보드 방향키 또는 드래그로 고양이를 조종하여<br>날아오는 매화검을 피하세요!</p>
+        <button id="startButton">게임 시작</button>
+    </div>
+
+    <div id="gameOverScreen" class="overlay">
+        <h1>게임 오버! 🐱💀</h1>
+        <p id="finalTitle"></p>
+        <p id="finalScore"></p>
+        <div class="button-group">
+            <button id="restartButton">다시하기</button>
+            <button id="shareButton">자랑하기</button>
+        </div>
+    </div>
+
     <canvas id="gameCanvas"></canvas>
+
     <script>
-	    
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-    	canvas.width = window.innerWidth;
-    	canvas.height = window.innerHeight;
-	function startGame() {	    
-	let catX = canvas.width / 2 - 12.5;
-	let catY = canvas.height / 2 - 12.5;
+        const scoreElement = document.getElementById("score");
+        const startScreen = document.getElementById("startScreen");
+        const gameOverScreen = document.getElementById("gameOverScreen");
+        const startButton = document.getElementById("startButton");
+        const restartButton = document.getElementById("restartButton");
+        const shareButton = document.getElementById("shareButton");
 
-	let speed = 5;
-	let keys = {};
-	
-	let isDragging = false;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-	let swords = [];
-	let gameTime = 0;
-	
-	let spawnRate = 1000; // 초기 검기 생성 주기 (1초)
-	let additionalSwords = 0; // 추가 생성할 검기 개수
+        // --- 게임 상태 변수 (전역으로 이동) ---
+        let catX, catY;
+        let speed = 5;
+        let keys = {};
+        let isDragging = false;
+        let swords = [];
+        let gameTime = 0;
+        let spawnRate;
+        let additionalSwords;
+        let isGameOver = true; // 처음엔 게임이 멈춘 상태
+        let startTime = null;
 
-	let isGameOver = false;
-	    
-	window.addEventListener("keydown", (event) => {
-		keys[event.key] = true;
-		if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
-		        event.preventDefault();
-		    }
-	});
+        // --- 게임 핵심 함수들 ---
 
-	window.addEventListener("keyup", (event) => {
-		keys[event.key] = false;
-	});
-	
-	canvas.addEventListener("mousedown", (event) => {
-		if (
-		    event.clientX >= catX &&
-		    event.clientX <= catX + 25 &&
-		    event.clientY >= catY &&
-		    event.clientY <= catY + 25
-		  ) {
-		    isDragging = true;
-		  }
-	});
-	
-	canvas.addEventListener("mousemove", (event) => {
-		if (isDragging) {
-			catX = event.clientX - 12.5;
-			catY = event.clientY - 12.5;
-		}
-	});
-	
-	canvas.addEventListener("mouseup", () => {
-		isDragging = false;
-	});
+        function getTitle(time) {
+            if (time < 20) return "초보 고양이";
+            if (time < 40) return "고양이 협객";
+            if (time < 60) return "매화검의 달인";
+            return "전설의 무림묘";
+        }
+        
+        // 게임 상태를 초기화하고 시작하는 함수
+        function startGame() {
+            // 게임 상태 초기화
+            catX = canvas.width / 2 - 12.5;
+            catY = canvas.height / 2 - 12.5;
+            swords = [];
+            gameTime = 0;
+            spawnRate = 1000;
+            additionalSwords = 0;
+            isGameOver = false;
+            startTime = null;
 
-	canvas.addEventListener("touchstart", (event) => {
-	    let touch = event.touches[0];
-	
-	    // 🔹 고양이 영역 안에서 터치했을 때만 드래그 활성화
-	    if (
-	        touch.clientX >= catX &&
-	        touch.clientX <= catX + 25 &&
-	        touch.clientY >= catY &&
-	        touch.clientY <= catY + 25
-	    ) {
-	        isDragging = true;
-	    }
-	}, { passive: false });
-
-	canvas.addEventListener("touchmove", (event) => {
-	    if (!isDragging) return; // 🔹 드래그 상태일 때만 이동
-	
-	    event.preventDefault();
-	    let touch = event.touches[0];
-	
-	    catX = touch.clientX - 12.5;
-	    catY = touch.clientY - 12.5;
-	}, { passive: false });
-	
-	canvas.addEventListener("touchend", () => {
-	    isDragging = false; // 터치가 끝나면 드래그 해제
-	});
-			
-		function moveCat() {
-			if (keys["ArrowLeft"] && catX > 0) catX -= speed;
-			if (keys["ArrowRight"] && catX < canvas.width - 25) catX += speed;
-			if (keys["ArrowUp"] && catY > 0) catY -= speed;
-			if (keys["ArrowDown"] && catY < canvas.height - 25) catY += speed;
-		}
-		
-		function createSword() {
-			let side = Math.floor(Math.random() * 4);
-			let x, y;
-
-			if (side === 0) {
-				x = Math.random() * canvas.width;
-				y = -5;
-			} else if (side === 1) {
-				x = Math.random() * canvas.width;
-				y = canvas.height + 5;
-			} else if (side === 2) {
-				x = -5;
-				y = Math.random() * canvas.height;
-			} else {
-				x = canvas.width + 5;
-				y = Math.random() * canvas.height;
-			}
-
-			let angle = Math.atan2(catY + 12.5 - y, catX + 12.5 - x);
-			let acceleration = gameTime > 30 ? 0.2 : 0.1; // 30초 이후 가속도 증가
-			let speed = Math.min(2 + gameTime * acceleration, 10); // 최대 속도 10 제한
-
-			swords.push({ x, y, angle, speed });
-		}
-
-		function updateSwords() {
-			swords = swords.filter(sword => {
-				sword.x += Math.cos(sword.angle) * sword.speed;
-				sword.y += Math.sin(sword.angle) * sword.speed;
-
-				return sword.x >= -5 && sword.x <= canvas.width + 5 &&
-					   sword.y >= -5 && sword.y <= canvas.height + 5;
-			});
-		}
-
-		function drawSwords() {
-			ctx.font = "15px sans-serif";
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			swords.forEach(sword => {
-			  ctx.fillText("🌸", sword.x, sword.y);
-			});
-		}
-		
-		function checkCollision() {
-			swords.forEach(sword => {
-				let dx = sword.x - (catX + 12.5);
-				let dy = sword.y - (catY + 12.5);
-				let distance = Math.sqrt(dx * dx + dy * dy);
-				
-				if (distance < 18) { // 고양이 크기 + 검기 크기 고려
-					
-					if (!isGameOver) {
-						isGameOver = true;
-						setTimeout(() => {
-							gameOver();
-						}, 100);
-					}
-				}
-			});
-		}
-
-		function gameOver() {
-			let title = getTitle(gameTime);
-			alert("게임 오버! 🐱💀\n칭호: " + title + "\n생존 시간: " + gameTime + "초");
-			location.reload(); // 게임 새로고침
-		}
-		
-		function updateScore() {
-			document.getElementById("score").innerText = "생존 시간: " + gameTime + "초";
-		}
-		
-		function getTitle(time) {
-			if (time < 20) return "초보 고양이";
-			if (time < 40) return "고양이 협객";
-			if (time < 60) return "매화검의 달인";
-			return "전설의 무림묘";
-		}
-	
-	let lastSpawnTime = 0;
-	let lastGameTime = 0;
-	
-	function spawnSwords(timestamp) {
-	    if (isGameOver) return;
-	
-	    // 1초마다 정확하게 gameTime 증가
-	    let currentGameTime = Math.floor(timestamp / 1000);
-	    if (currentGameTime > lastGameTime) {
-	        gameTime += 1;
-	        lastGameTime = currentGameTime;
-	    }
-	
-	    if (timestamp - lastSpawnTime > spawnRate) {
-	        createSword();
-	
-	        // 5초마다 검기 생성 속도 증가 & 추가 검기 개수 제한
-	        if (gameTime % 5 === 0) {
-	            spawnRate = Math.max(spawnRate - 100, 300);
-	            additionalSwords = Math.min(additionalSwords + 5, 100); // 최대 100개 제한
-	        }
-	
-	        for (let i = 0; i < additionalSwords; i++) {
-	            createSword();
-	        }
-	
-	        lastSpawnTime = timestamp;
-	    }
-	
-	    requestAnimationFrame(spawnSwords);
-	}
-	
-
-
-
-		
-        function gameLoop() {
-			if (isGameOver) return; // 게임 오버 시 draw() 중단
-			
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-			moveCat();
-			updateSwords();
-			drawSwords();
-			checkCollision();
-			updateScore();
-			
-			ctx.font = "25px sans-serif";
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			ctx.fillText("🐱", catX + 12.5, catY + 12.5);
-			requestAnimationFrame(gameLoop);
+            // 화면 전환
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            scoreElement.style.display = 'block';
+            
+            // 게임 루프 시작
+            requestAnimationFrame(gameLoop);
         }
 
-        gameLoop();
-	requestAnimationFrame(spawnSwords);
-	
-	
-	    }
-    const checkCanvasSize = setInterval(() => {
-	    
-    	canvas.width = window.innerWidth;
-    	canvas.height = window.innerHeight;
-      if (canvas.width >= 10 && canvas.height >= 10) {
-        clearInterval(checkCanvasSize);
-        startGame();
-      }
-    }, 100);
+        function gameOver() {
+            isGameOver = true;
+            document.getElementById("finalTitle").innerText = "칭호: " + getTitle(gameTime);
+            document.getElementById("finalScore").innerText = "생존 시간: " + gameTime + "초";
+            gameOverScreen.style.display = 'flex';
+            scoreElement.style.display = 'none';
+        }
+
+        function moveCat() {
+            if (keys["ArrowLeft"] && catX > 0) catX -= speed;
+            if (keys["ArrowRight"] && catX < canvas.width - 25) catX += speed;
+            if (keys["ArrowUp"] && catY > 0) catY -= speed;
+            if (keys["ArrowDown"] && catY < canvas.height - 25) catY += speed;
+        }
+
+        function createSword() {
+            let side = Math.floor(Math.random() * 4);
+            let x, y;
+            if (side === 0) { x = Math.random() * canvas.width; y = -10; }
+            else if (side === 1) { x = Math.random() * canvas.width; y = canvas.height + 10; }
+            else if (side === 2) { x = -10; y = Math.random() * canvas.height; }
+            else { x = canvas.width + 10; y = Math.random() * canvas.height; }
+
+            let angle = Math.atan2(catY + 12.5 - y, catX + 12.5 - x);
+            let acceleration = gameTime > 30 ? 0.2 : 0.1;
+            let swordSpeed = Math.min(2 + gameTime * acceleration, 10);
+            swords.push({ x, y, angle, speed: swordSpeed });
+        }
+
+        function updateSwords() {
+            swords = swords.filter(sword => {
+                sword.x += Math.cos(sword.angle) * sword.speed;
+                sword.y += Math.sin(sword.angle) * sword.speed;
+                return sword.x >= -10 && sword.x <= canvas.width + 10 &&
+                       sword.y >= -10 && sword.y <= canvas.height + 10;
+            });
+        }
+
+        function drawSwords() {
+            ctx.font = "15px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            swords.forEach(sword => ctx.fillText("🌸", sword.x, sword.y));
+        }
+
+        function checkCollision() {
+            for (const sword of swords) {
+                let dx = sword.x - (catX + 12.5);
+                let dy = sword.y - (catY + 12.5);
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < 18) {
+                    gameOver();
+                    break;
+                }
+            }
+        }
+
+        function updateScore() {
+            scoreElement.innerText = "생존 시간: " + gameTime + "초";
+        }
+        
+        let lastSpawnTime = 0;
+
+        function gameLoop(timestamp) {
+            if (isGameOver) return;
+            if (!startTime) startTime = timestamp;
+
+            // 시간 및 난이도 업데이트
+            let elapsedSeconds = Math.floor((timestamp - startTime) / 1000);
+            if (elapsedSeconds > gameTime) {
+                gameTime = elapsedSeconds;
+                if (gameTime > 0 && gameTime % 5 === 0) {
+                    spawnRate = Math.max(spawnRate - 100, 300);
+                    additionalSwords = Math.min(additionalSwords + 1, 20);
+                }
+            }
+            
+            // 검기 생성
+            if (timestamp - lastSpawnTime > spawnRate) {
+                createSword();
+                for (let i = 0; i < additionalSwords; i++) createSword();
+                lastSpawnTime = timestamp;
+            }
+
+            // 그리기 및 업데이트
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            moveCat();
+            updateSwords();
+            drawSwords();
+            updateScore();
+            
+            ctx.font = "25px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🐱", catX + 12.5, catY + 12.5);
+
+            // 충돌 감지는 마지막에
+            checkCollision();
+
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // --- 이벤트 리스너 (한 번만 등록) ---
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame); // 다시하기 버튼도 startGame 호출
+
+        shareButton.addEventListener('click', () => {
+            const title = getTitle(gameTime);
+            const textToCopy = `${title} 칭호를 얻었다! (생존 시간: ${gameTime}초) www.abc.com`;
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                shareButton.innerText = '복사 완료!';
+                setTimeout(() => {
+                    shareButton.innerText = '자랑하기';
+                }, 1500);
+            }).catch(err => {
+                console.error('클립보드 복사 실패:', err);
+                alert('링크 복사에 실패했습니다.');
+            });
+        });
+
+        window.addEventListener("keydown", (event) => {
+            keys[event.key] = true;
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
+                event.preventDefault();
+            }
+        });
+
+        window.addEventListener("keyup", (event) => {
+            keys[event.key] = false;
+        });
+
+        canvas.addEventListener("mousedown", (event) => {
+            if (isGameOver) return;
+            if (event.clientX >= catX && event.clientX <= catX + 25 &&
+                event.clientY >= catY && event.clientY <= catY + 25) {
+                isDragging = true;
+            }
+        });
+
+        canvas.addEventListener("mousemove", (event) => {
+            if (isDragging) {
+                catX = event.clientX - 12.5;
+                catY = event.clientY - 12.5;
+            }
+        });
+
+        canvas.addEventListener("mouseup", () => { isDragging = false; });
+        canvas.addEventListener("mouseleave", () => { isDragging = false; });
+
+        canvas.addEventListener("touchstart", (event) => {
+            if (isGameOver) return;
+            let touch = event.touches[0];
+            if (touch.clientX >= catX && touch.clientX <= catX + 25 &&
+                touch.clientY >= catY && touch.clientY <= catY + 25) {
+                isDragging = true;
+            }
+        }, { passive: false });
+
+        canvas.addEventListener("touchmove", (event) => {
+            if (!isDragging) return;
+            event.preventDefault();
+            let touch = event.touches[0];
+            catX = touch.clientX - 12.5;
+            catY = touch.clientY - 12.5;
+        }, { passive: false });
+
+        canvas.addEventListener("touchend", () => { isDragging = false; });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // 게임이 진행 중이 아닐 때만 고양이 위치를 재조정
+            if (isGameOver) {
+                catX = canvas.width / 2 - 12.5;
+                catY = canvas.height / 2 - 12.5;
+            }
+        });
     </script>
 </body>
 </html>
