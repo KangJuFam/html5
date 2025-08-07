@@ -25,9 +25,9 @@
             background-color: rgba(255, 255, 255, 0.7);
             padding: 5px 10px;
             border-radius: 5px;
-            display: none; /* 게임 시작 전에는 숨김 */
+            display: none;
         }
-        /* 시작 및 게임 오버 화면 공통 스타일 */
+        /* 공통 오버레이 스타일 */
         .overlay {
             position: absolute;
             top: 0;
@@ -41,18 +41,39 @@
             align-items: center;
             color: white;
             text-align: center;
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
         }
-        .overlay h1 {
-            font-size: 3em;
-            margin-bottom: 20px;
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .overlay-content {
+            background-color: white;
+            color: black;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            max-width: 90%;
+            width: 350px;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .overlay.active .overlay-content {
+            transform: scale(1);
+        }
+        .overlay h1, .overlay h2 {
+            font-size: 2.5em;
+            margin: 0 0 20px 0;
         }
         .overlay p {
-            font-size: 1.5em;
+            font-size: 1.2em;
             margin: 10px 0;
         }
         .overlay button {
-            padding: 15px 30px;
-            font-size: 1.2em;
+            padding: 12px 25px;
+            font-size: 1.1em;
             cursor: pointer;
             border: none;
             border-radius: 8px;
@@ -60,51 +81,76 @@
             color: white;
             margin-top: 20px;
             font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .overlay button:hover {
+            background-color: #45a049;
         }
         .overlay .button-group {
-            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
         }
-        .overlay .button-group button {
-            margin: 0 10px;
+        #shareText {
+            width: 100%;
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: none;
+            font-size: 0.9em;
+            box-sizing: border-box;
+            background-color: #f7f7f7;
         }
-        #startScreen {
-            display: flex; /* 기본적으로 보이게 설정 */
+        #copyButton {
+            background-color: #4285F4;
         }
-        #gameOverScreen {
-            display: none; /* 기본적으로 숨김 */
+        #copyButton:hover {
+            background-color: #3b78e3;
         }
-        #sharePopup {
-            display: none;
+        #closeButton {
+            background-color: #f44336;
         }
+        #closeButton:hover {
+            background-color: #d32f2f;
+        }
+        #startScreen.active { display: flex; }
+        #gameOverScreen.active { display: flex; }
+        #sharePopup.active { display: flex; }
     </style>
 </head>
 <body>
     <div id="score">생존 시간: 0초</div>
 
-    <div id="startScreen" class="overlay">
-        <h1>고양이 vs. 매화검 🌸</h1>
-        <p>키보드 방향키로 고양이를 조종하여<br>날아오는 매화검을 피하세요!</p>
-        <button id="startButton">게임 시작</button>
+    <div id="startScreen" class="overlay active">
+        <div class="overlay-content">
+            <h1>고양이 vs. 매화검 🌸</h1>
+            <p>키보드 방향키로 고양이를 조종하여<br>날아오는 매화검을 피하세요!</p>
+            <button id="startButton">게임 시작</button>
+        </div>
     </div>
 
     <div id="gameOverScreen" class="overlay">
-        <h1>게임 오버! 🐱💀</h1>
-        <p id="finalTitle"></p>
-        <p id="finalScore"></p>
-        <div class="button-group">
-            <button id="restartButton">다시하기</button>
-            <button id="shareButton">자랑하기</button>
+        <div class="overlay-content">
+            <h1>게임 오버! 🐱💀</h1>
+            <p id="finalTitle"></p>
+            <p id="finalScore"></p>
+            <div class="button-group">
+                <button id="restartButton">다시하기</button>
+                <button id="shareButton">자랑하기</button>
+            </div>
         </div>
     </div>
     
     <div id="sharePopup" class="overlay">
-        <div style="background-color: white; padding: 20px; border-radius: 8px; color: black; max-width: 300px;">
+        <div class="overlay-content">
             <h2>결과 자랑하기</h2>
             <p>아래 문구를 복사하여 친구들에게 공유하세요!</p>
-            <textarea id="shareText" rows="3" style="width: 100%; margin-bottom: 10px;"></textarea>
-            <div style="display: flex; justify-content: space-between;">
-                <button id="copyButton" style="background-color: #4CAF50;">복사</button>
-                <button id="closeButton" style="background-color: #f44336;">닫기</button>
+            <textarea id="shareText" rows="3"></textarea>
+            <div class="button-group">
+                <button id="copyButton">복사</button>
+                <button id="closeButton">닫기</button>
             </div>
         </div>
     </div>
@@ -121,7 +167,6 @@
         const restartButton = document.getElementById("restartButton");
         const shareButton = document.getElementById("shareButton");
         
-        // 공유 팝업 관련 변수들
         const sharePopup = document.getElementById("sharePopup");
         const shareTextarea = document.getElementById("shareText");
         const copyButton = document.getElementById("copyButton");
@@ -130,7 +175,6 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // --- 게임 상태 변수 (전역으로 이동) ---
         let catX, catY;
         let speed = 5;
         let keys = {};
@@ -139,10 +183,8 @@
         let gameTime = 0;
         let spawnRate;
         let additionalSwords;
-        let isGameOver = true; // 처음엔 게임이 멈춘 상태
+        let isGameOver = true;
         let startTime = null;
-
-        // --- 게임 핵심 함수들 ---
 
         function getTitle(time) {
             if (time < 20) return "초보 고양이";
@@ -151,9 +193,7 @@
             return "전설의 무림묘";
         }
         
-        // 게임 상태를 초기화하고 시작하는 함수
         function startGame() {
-            // 게임 상태 초기화
             catX = canvas.width / 2 - 12.5;
             catY = canvas.height / 2 - 12.5;
             swords = [];
@@ -163,13 +203,11 @@
             isGameOver = false;
             startTime = null;
 
-            // 화면 전환
-            startScreen.style.display = 'none';
-            gameOverScreen.style.display = 'none';
-            sharePopup.style.display = 'none';
+            startScreen.classList.remove('active');
+            gameOverScreen.classList.remove('active');
+            sharePopup.classList.remove('active');
             scoreElement.style.display = 'block';
             
-            // 게임 루프 시작
             requestAnimationFrame(gameLoop);
         }
 
@@ -177,7 +215,7 @@
             isGameOver = true;
             document.getElementById("finalTitle").innerText = "칭호: " + getTitle(gameTime);
             document.getElementById("finalScore").innerText = "생존 시간: " + gameTime + "초";
-            gameOverScreen.style.display = 'flex';
+            gameOverScreen.classList.add('active');
             scoreElement.style.display = 'none';
         }
 
@@ -240,7 +278,6 @@
             if (isGameOver) return;
             if (!startTime) startTime = timestamp;
 
-            // 시간 및 난이도 업데이트
             let elapsedSeconds = Math.floor((timestamp - startTime) / 1000);
             if (elapsedSeconds > gameTime) {
                 gameTime = elapsedSeconds;
@@ -250,14 +287,12 @@
                 }
             }
             
-            // 검기 생성
             if (timestamp - lastSpawnTime > spawnRate) {
                 createSword();
                 for (let i = 0; i < additionalSwords; i++) createSword();
                 lastSpawnTime = timestamp;
             }
 
-            // 그리기 및 업데이트
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             moveCat();
             updateSwords();
@@ -269,26 +304,22 @@
             ctx.textBaseline = "middle";
             ctx.fillText("🐱", catX + 12.5, catY + 12.5);
 
-            // 충돌 감지는 마지막에
             checkCollision();
 
             requestAnimationFrame(gameLoop);
         }
         
-        // --- 이벤트 리스너 (한 번만 등록) ---
         startButton.addEventListener('click', startGame);
         restartButton.addEventListener('click', startGame);
 
-        // 자랑하기 버튼 클릭 시 팝업 열기
         shareButton.addEventListener('click', () => {
             const title = getTitle(gameTime);
             const textToShare = `${title} 칭호를 얻었다! (생존 시간: ${gameTime}초) https://kangjufam.github.io/html5/CatVsMeihwaSword/main.html`;
             
             shareTextarea.value = textToShare;
-            sharePopup.style.display = 'flex';
+            sharePopup.classList.add('active');
         });
 
-        // 팝업 내 복사 버튼
         copyButton.addEventListener('click', () => {
             shareTextarea.select();
             
@@ -302,9 +333,8 @@
             });
         });
 
-        // 팝업 내 닫기 버튼
         closeButton.addEventListener('click', () => {
-            sharePopup.style.display = 'none';
+            sharePopup.classList.remove('active');
             copyButton.innerText = '복사';
         });
 
